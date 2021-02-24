@@ -1,4 +1,5 @@
-﻿using PaymentApplication.Core.Domain.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using PaymentApplication.Core.Domain.Models;
 using PaymentApplication.Core.Domain.Repository;
 using PaymentApplication.Persistence.Context;
 using System;
@@ -15,5 +16,9 @@ namespace PaymentApplication.Persistence.Repository
 
         }
 
+        public PaymentDetail GetPaymentDetailById(int id)
+        {
+           return Entities.Where(c => c.Id == id).Include(c => c.PaymentLogs).FirstOrDefault();
+        }
     }
 }

@@ -10,8 +10,8 @@ namespace PaymentApplication.Persistence.Context
 {
     public class PaymentAppDbContext:DbContext
     {
-        public DbSet<PaymentLog> PaymentLog { get; set; }
-        public DbSet<PaymentDetail> PaymentDetail { get; set; }
+        public DbSet<PaymentLog> PaymentLogs { get; set; }
+        public DbSet<PaymentDetail> PaymentDetails { get; set; }
 
 
         public PaymentAppDbContext(DbContextOptions<PaymentAppDbContext> options) : base(options)
@@ -29,7 +29,7 @@ namespace PaymentApplication.Persistence.Context
                           new EnumToStringConverter<PaymentState>());
 
             modelBuilder.Entity<PaymentLog>()
-                     .Property(p => p.PaymentReference)
+                     .Property(p => p.PaymentGateway)
                      .HasConversion(
                          new EnumToStringConverter<PaymentGateway>());
         }

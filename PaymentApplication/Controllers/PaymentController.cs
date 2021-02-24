@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using PaymentApplication.Core.Application.Services.Interfaces;
 using PaymentApplication.Core.Domain.Models;
 using PaymentApplication.Dtos;
 using System;
@@ -9,14 +10,19 @@ using System.Threading.Tasks;
 
 namespace PaymentApplication.Controllers
 {
-    public class PaymentController : Controller
+    [Route("api/payment/")]
+    [ApiController]
+    public class PaymentController : ControllerBase
     {
         private readonly IMapper mapper;
+        private readonly IPaymentDetailService payment;
 
-        public PaymentController(IMapper mapper)
+        public PaymentController(IMapper mapper, IPaymentDetailService payment)
         {
             this.mapper = mapper;
+            this.payment = payment;
         }
+        [HttpPost("processpayment")]
         public IActionResult ProcessPayment(PaymentRequestDto paymentDetail )
         {
             if (ModelState.IsValid)
@@ -24,10 +30,18 @@ namespace PaymentApplication.Controllers
                 
                 var answer = mapper.Map<PaymentDetail>(paymentDetail);
 
-                return Ok(answerOptionsService.CreateAnswerOption(answer));
+              var result=  payment.ProcessPayment(answer);
+                if(result.Code==Helper.ResponseCodes.INVALID_REQUEST)
+                    return BadRequest("Request is Invalid");
+
+                if (result.Code == Helper.ResponseCodes.ERROR)
+                    return StatusCode(500,new { message="Internal Server Error" });
+
+                if (result.Code == Helper.ResponseCodes.OK)
+                    return Ok(new { message = "Payment is Processed" });
+
             }
-            return BadRequest("Invalid Paramter");
-            return View();
+            return BadRequest("Request is Invalid");
         }
        
     }

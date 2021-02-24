@@ -1,4 +1,5 @@
 ﻿using PaymentApplication.Core.Domain.Models;
+using PaymentApplication.Dtos;
 using PaymentApplication.Helper;
 using System;
 using System.Collections.Generic;
@@ -10,9 +11,9 @@ namespace PaymentApplication.Core.Application.Services.Interfaces
     public interface IPaymentDetailService
     {
 
-        Response<PaymentDetail> ProcessPayment(PaymentDetail paymentDetail);
+        Response<PaymentResponseDto> ProcessPayment(PaymentDetail paymentDetail,int transactionType=0);
 
-        PaymentDetail UpdatePaymentDetail(PaymentDetail paymentDetail);
+      //  PaymentDetail UpdatePaymentDetail(PaymentDetail paymentDetail);
 
     }
 }

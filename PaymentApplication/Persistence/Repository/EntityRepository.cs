@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PaymentApplication.Domain.Repository;
+using PaymentApplication.Core.Domain.Repository;
 using PaymentApplication.Persistence.Context;
 using System;
 using System.Collections.Generic;
@@ -39,15 +39,7 @@ namespace PaymentApplication.Persistence.Repository
             return entitysaved;
         }
 
-        public void AddRange(IEnumerable<TEntity> entities)
-        {
-            Entities.AddRange(entities);
-        }
-
-        public int Count()
-        {
-            return Entities.Count();
-        }
+        
 
         public IEnumerable<TEntity> Filter(Expression<Func<TEntity, bool>> predicate, string includeProperties = "")
         {
@@ -87,9 +79,6 @@ namespace PaymentApplication.Persistence.Repository
             return context.SaveChanges();
         }
 
-        public bool Exist(int id)
-        {
-            return Entities.Any();
-        }
+        
     }
 }

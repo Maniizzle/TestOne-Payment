@@ -10,7 +10,7 @@ namespace PaymentApplication.Core.Application.Services.Gateways
 {
     public interface IPremiumPaymentGateway
     {
-        Response<PaymentDetail> ProcessPayment(PaymentDetail paymentDetail);
+        Response<PaymentDetail> ProcessPayment(PaymentDetail paymentDetail, int number = 0);
      
 
     }

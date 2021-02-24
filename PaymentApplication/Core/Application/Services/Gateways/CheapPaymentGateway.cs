@@ -9,9 +9,11 @@ namespace PaymentApplication.Core.Application.Services.Gateways
 {
     public class CheapPaymentGateway : ICheapPaymentGateway
     {
-        public Response<PaymentDetail> ProcessPayment(PaymentDetail paymentDetail)
+        public Response<PaymentDetail> ProcessPayment(PaymentDetail paymentDetail,int number=0)
         {
-          var number=  Utility.Utility.GenerateRandomNumber();
+            if (number == 0)
+                number =  Utility.Utility.GenerateRandomNumber();
+          
             if (number % 2 == 0)
                 return new Response<PaymentDetail> { Code = ResponseCodes.OK, Description = "Sucess", Payload = paymentDetail };
             

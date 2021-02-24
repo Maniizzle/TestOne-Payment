@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PaymentApplication.Mapper
 {
-    public class PaymentProfile:Profile
+    public class PaymentProfile : Profile
     {
         public PaymentProfile()
         {
@@ -16,3 +16,4 @@ namespace PaymentApplication.Mapper
 
         }
     }
+}

@@ -16,13 +16,9 @@ namespace PaymentApplication.Core.Domain.Repository
 
         TEntity Add(TEntity entity);
 
-        void AddRange(IEnumerable<TEntity> entities);
 
         void Remove(TEntity entity);
 
-        bool Exist(int id);
-
-        int Count();
 
         void Update(TEntity entity);
 

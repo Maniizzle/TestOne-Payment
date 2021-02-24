@@ -8,5 +8,7 @@ namespace PaymentApplication.Core.Domain.Repository
 {
     public interface IPaymentDetailRepository:IEntityRepository<PaymentDetail>
     {
+        PaymentDetail GetPaymentDetailById(int id);
+
     }
 }

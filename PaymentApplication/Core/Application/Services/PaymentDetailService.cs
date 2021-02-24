@@ -1,7 +1,6 @@
 ﻿using PaymentApplication.Core.Application.Services.Interfaces;
 using PaymentApplication.Core.Domain.Models;
 using PaymentApplication.Core.Domain.Repository;
-using PaymentApplication.Domain.Repository;
 using PaymentApplication.Utility;
 using PaymentApplication.Persistence.Repository;
 using System;
@@ -10,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using PaymentApplication.Helper;
 using PaymentApplication.Core.Application.Services.Gateways;
+using PaymentApplication.Dtos;
 
 namespace PaymentApplication.Core.Application.Services
 {
@@ -29,128 +29,186 @@ namespace PaymentApplication.Core.Application.Services
             this.cheapPaymentGateway = cheapPaymentGateway;
             this.premiumPaymentGateway = premiumPaymentGateway;
         }
-        public Response<PaymentDetail> ProcessPayment(PaymentDetail paymentDetail)
+        public Response<PaymentResponseDto> ProcessPayment(PaymentDetail paymentDetail, int transactionType = 0)
         {
-            if (!paymentDetail.ValidatePaymentDetail())
-                return new Response<PaymentDetail> { Code = ResponseCodes.INVALID_REQUEST, Description = "Invalid Request", Payload = paymentDetail };
-            // var result= Utility.Utility.ValidateCreditCardNumber(paymentDetail.CreditCardNumber);
-            if()
-           // detailRepository.Add()
-                return paymentDetail;
-        }
-
-        public PaymentDetail UpdatePaymentDetail(PaymentDetail paymentDetail)
-        {
-            throw new NotImplementedException();
-        }
-
-        private bool Proceeed(decimal amount,PaymentDetail paymentDetail)
-        {
-            switch (amount)
+            try
             {
+                if (!paymentDetail.ValidatePaymentDetail())
+                    return new Response<PaymentResponseDto> { Code = ResponseCodes.INVALID_REQUEST, Description = "Invalid Request", Payload = new PaymentResponseDto {Message= "Invalid Request", Amount=paymentDetail.Amount } };
+                bool paymentStatus;
 
-                case var n when n>0 && n<21:
-                    
-                    var referenceNumber = Utility.Utility.GenerateReferenceNumber();
-                    paymentDetail.PaymentReference = referenceNumber;
-                    paymentDetail.PaymentLogs = new List<PaymentLog> { new PaymentLog { Amount = paymentDetail.Amount, PaymentDate = DateTime.Now, PaymentState = PaymentState.Pending, PaymentGateway = PaymentGateway.CheapGateway, PaymentReference = referenceNumber } };
-                        detailRepository.Add(paymentDetail);
-                        if(!(detailRepository.Save()>0))
-                        return false;
+                switch (paymentDetail.Amount)
+                {
 
-                    var gatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail);
-                    if (gatewayResult.Code == ResponseCodes.OK)
-                    {
-                        var result = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumber).FirstOrDefault();
-                        result.PaymentState = PaymentState.Processed;
-                       // var log = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.PaymentDetailId, PaymentReference = result.PaymentReference, Amount = gatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Processed });
-                        return true;
-                    }
-                    else
-                    {
-                        var result = detailRepository.Filter(c => c.PaymentReference == referenceNumber, "PaymentLog").FirstOrDefault();
-                        var log = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentState = PaymentState.Failed });
-                        return false;
-                    }
+                    //later move range to appsettings to make it dynamic
+                    case var n when n > 0 && n < 21:
 
-                case var n when n > 20 && n < 501:
-                    var referenceNumberr = Utility.Utility.GenerateReferenceNumber();
-                    paymentDetail.PaymentReference = referenceNumberr;
-                    paymentDetail.PaymentLogs = new List<PaymentLog> { new PaymentLog { Amount = paymentDetail.Amount, PaymentDate = DateTime.Now, PaymentState = PaymentState.Pending, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentReference = referenceNumberr } };
-                    detailRepository.Add(paymentDetail);
-                    if (!(detailRepository.Save() > 0))
-                        return false;
+                        paymentStatus = ProcessPaymentLessThan21(paymentDetail,transactionType);
+                        break;
 
-                    var expGatewayResult = expensivePaymentGateway.ProcessPayment(paymentDetail);
-                    if (expGatewayResult.Code == ResponseCodes.OK)
-                    {
-                        var result = detailRepository.Filter(c => c.PaymentReference == referenceNumberr, "PaymentLog").FirstOrDefault();
-                        var log = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentState = PaymentState.Processed });
-                        return true;
-                    }
-                    else
-                    {
-                        var result = detailRepository.Filter(c => c.PaymentReference == referenceNumberr, "PaymentLog").FirstOrDefault();
-                        var log = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentState = PaymentState.Failed });
+                    case var n when n > 20 && n < 501:
 
-                        //retry with cheapGateWay
-                        var cheapGatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail);
-                        if (cheapGatewayResult.Code == ResponseCodes.OK)
-                        {
-                           // var resulttt = detailRepository.Filter(c => c.PaymentReference == referenceNumberr, "PaymentLog").FirstOrDefault();
-                            var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Processed });
-                            return true;
-                        }
-                        else
-                        {
-                            var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Failed });
-                            return false;
-                        }
+                        paymentStatus = ProcessPaymentGreaterThan21LessThan501(paymentDetail,transactionType);
+                        break;
 
-                    }
+                    case var n when n > 500:
 
+                        paymentStatus = ProcessPaymentGreaterThan500(paymentDetail,transactionType);
+                        break;
 
+                    default:
+                        paymentStatus = false;
+                        break;
+                }
 
-                case var n when n > 500 :
-                    var referenceNumberr = Utility.Utility.GenerateReferenceNumber();
-                    paymentDetail.PaymentReference = referenceNumberr;
-                    paymentDetail.PaymentLogs = new List<PaymentLog> { new PaymentLog { Amount = paymentDetail.Amount, PaymentDate = DateTime.Now, PaymentState = PaymentState.Pending, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentReference = referenceNumberr } };
-                    detailRepository.Add(paymentDetail);
-                    if (!(detailRepository.Save() > 0))
-                        return false;
+                if (paymentStatus == true)
+                {
+                    return new Response<PaymentResponseDto> { Code = ResponseCodes.OK, Description = "Successful", Payload = new PaymentResponseDto { Message = "Invalid Request", Amount = paymentDetail.Amount } };
 
-                    var expGatewayResult = expensivePaymentGateway.ProcessPayment(paymentDetail);
-                    if (expGatewayResult.Code == ResponseCodes.OK)
-                    {
-                        var result = detailRepository.Filter(c => c.PaymentReference == referenceNumberr, "PaymentLog").FirstOrDefault();
-                        var log = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentState = PaymentState.Processed });
-                        return true;
-                    }
-                    else
-                    {
-                        var result = detailRepository.Filter(c => c.PaymentReference == referenceNumberr, "PaymentLog").FirstOrDefault();
-                        var log = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentState = PaymentState.Failed });
+                }
+                else
+                {
+                    return new Response<PaymentResponseDto> { Code = ResponseCodes.ERROR, Description = "Server Error", Payload = new PaymentResponseDto { Message = "Invalid Request", Amount = paymentDetail.Amount } };
 
-                        //retry with cheapGateWay
-                        var cheapGatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail);
-                        if (cheapGatewayResult.Code == ResponseCodes.OK)
-                        {
-                            // var resulttt = detailRepository.Filter(c => c.PaymentReference == referenceNumberr, "PaymentLog").FirstOrDefault();
-                            var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Processed });
-                            return true;
-                        }
-                        else
-                        {
-                            var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = result.Id, PaymentReference = result.PaymentReference, Amount = expGatewayResult.Payload.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Failed });
-                            return false;
-                        }
-
-                    }
-
-
-                default:
-                    break;
+                }
+            }
+            catch (Exception)
+            {
+                return new Response<PaymentResponseDto> { Code = ResponseCodes.ERROR, Description = "Server Error", Payload = new PaymentResponseDto { Message = "Invalid Request", Amount = paymentDetail.Amount } };
             }
         }
+
+
+        public bool ProcessPaymentLessThan21(PaymentDetail paymentDetail, int transactionType = 0)
+        {
+            var referenceNumber = Utility.Utility.GenerateReferenceNumber();
+            paymentDetail.PaymentReference = referenceNumber;
+            paymentDetail.PaymentLogs = new List<PaymentLog> { new PaymentLog { Amount = paymentDetail.Amount, PaymentDate = DateTime.Now, PaymentState = PaymentState.Pending, PaymentGateway = PaymentGateway.CheapGateway, PaymentReference = referenceNumber } };
+            detailRepository.Add(paymentDetail);
+            detailRepository.Save();
+
+            var gatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail,transactionType);
+            var result = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumber).FirstOrDefault();
+            if (gatewayResult.Code == ResponseCodes.OK)
+            {
+                result.PaymentState = PaymentState.Processed;
+                paymentLogRepository.Update(result);
+                paymentLogRepository.Save();
+                return true;
+            }
+            else
+            {
+                result.PaymentState = PaymentState.Failed;
+                paymentLogRepository.Update(result);
+                paymentLogRepository.Save();
+                return false;
+            }
+
+        }
+
+        public bool ProcessPaymentGreaterThan21LessThan501(PaymentDetail paymentDetail, int transactionType = 0)
+        {
+            var referenceNumberr = Utility.Utility.GenerateReferenceNumber();
+            paymentDetail.PaymentReference = referenceNumberr;
+            paymentDetail.PaymentLogs = new List<PaymentLog> { new PaymentLog { Amount = paymentDetail.Amount, PaymentDate = DateTime.Now, PaymentState = PaymentState.Pending, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentReference = referenceNumberr } };
+            detailRepository.Add(paymentDetail);
+            if (!(detailRepository.Save() > 0))
+                return false;
+
+            var expGatewayResult = expensivePaymentGateway.ProcessPayment(paymentDetail,transactionType);
+            var paymentLog = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberr).FirstOrDefault();
+
+            if (expGatewayResult.Code == ResponseCodes.OK)
+            {
+                paymentLog.PaymentState = PaymentState.Processed;
+                paymentLogRepository.Update(paymentLog);
+                paymentLogRepository.Save();
+                return true;
+            }
+            else
+            {
+                paymentLog.PaymentState = PaymentState.Failed;
+                paymentLogRepository.Update(paymentLog);
+                paymentLogRepository.Save();
+
+
+                //retry with cheapGateWay
+                var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = paymentLog.PaymentDetailId, PaymentReference = paymentLog.PaymentReference, Amount = paymentDetail.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Pending });
+                var cheapGatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail);
+                var paymentLogCheap = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberr && c.PaymentGateway == PaymentGateway.CheapGateway).FirstOrDefault();
+                if (cheapGatewayResult.Code == ResponseCodes.OK)
+                {
+                    paymentLog.PaymentState = PaymentState.Processed;
+                    paymentLogRepository.Update(paymentLog);
+                    paymentLogRepository.Save();
+                    return true;
+                }
+                else
+                {
+                    paymentLog.PaymentState = PaymentState.Failed;
+                    paymentLogRepository.Update(paymentLog);
+                    paymentLogRepository.Save();
+                    return false;
+                }
+
+            }
+
+        }
+
+   
+        public bool ProcessPaymentGreaterThan500(PaymentDetail paymentDetail, int transactionType = 0)
+        {
+            var referenceNumberrr = Utility.Utility.GenerateReferenceNumber();
+            paymentDetail.PaymentReference = referenceNumberrr;
+            paymentDetail.PaymentLogs = new List<PaymentLog> { new PaymentLog { Amount = paymentDetail.Amount, PaymentDate = DateTime.Now, PaymentState = PaymentState.Pending, PaymentGateway = PaymentGateway.ExpensiveGateway, PaymentReference = referenceNumberrr } };
+            detailRepository.Add(paymentDetail);
+            detailRepository.Save();
+
+            var premiumPaymentResult = premiumPaymentGateway.ProcessPayment(paymentDetail,transactionType);
+            var paymentLogg = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberrr).FirstOrDefault();
+            if (premiumPaymentResult.Code == ResponseCodes.OK)
+            {
+                paymentLogg.PaymentState = PaymentState.Processed;
+                paymentLogRepository.Update(paymentLogg);
+                paymentLogRepository.Save();
+                return true;
+            }
+            else
+            {
+
+                paymentLogg.PaymentState = PaymentState.Failed;
+                paymentLogRepository.Update(paymentLogg);
+                paymentLogRepository.Save();
+
+
+                int count = 1;
+                while (count < 4)
+                {
+                    var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = paymentLogg.PaymentDetailId, PaymentReference = referenceNumberrr, Amount = paymentDetail.Amount, PaymentGateway = PaymentGateway.PremiumGateway, PaymentState = PaymentState.Pending });
+                    if (!(paymentLogRepository.Save() > 0))
+                        return false;
+                    var premiumPaymentResultt = premiumPaymentGateway.ProcessPayment(paymentDetail,transactionType);
+                    var paymentLogPremium = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberrr && c.PaymentGateway == PaymentGateway.PremiumGateway && c.PaymentState == PaymentState.Pending).FirstOrDefault();
+
+                    if (premiumPaymentResultt.Code == ResponseCodes.OK)
+                    {
+                        paymentLogPremium.PaymentState = PaymentState.Processed;
+                        paymentLogRepository.Update(paymentLogPremium);
+                        paymentLogRepository.Save();
+                        return true;
+                    }
+                    else
+                    {
+                        paymentLogPremium.PaymentState = PaymentState.Failed;
+                        paymentLogRepository.Update(paymentLogPremium);
+                        paymentLogRepository.Save();
+                        count++;
+                    }
+                }
+                return false;
+            }
+
+        }
+
     }
 }

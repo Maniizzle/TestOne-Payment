@@ -15,7 +15,7 @@ namespace PaymentApplication.Utility
 		public static int GenerateRandomNumber()
         {
 			var fff = new Random();
-			var number = fff.Next(1, 2);
+			var number = fff.Next(2, 5);
 			return number;
 		}
 

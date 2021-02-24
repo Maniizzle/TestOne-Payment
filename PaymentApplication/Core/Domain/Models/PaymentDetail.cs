@@ -19,9 +19,9 @@ namespace PaymentApplication.Core.Domain.Models
 
 
 
-		private  bool ValidateCreditCardNumber()
+		public  bool ValidateCreditCardNumber()
 		{
-			bool status = int.TryParse(CreditCardNumber.Trim(), out int checkResult);
+			bool status = long.TryParse(CreditCardNumber.Trim(), out long checkResult);
 			if (!status)
 				return false;
 
@@ -59,15 +59,15 @@ namespace PaymentApplication.Core.Domain.Models
 
 		}
 
-		private bool ValidateExpirationDate()
+		public bool ValidateExpirationDate()
         {
 			return DateTime.Today <= ExpirationDate;
         }
-		private bool ValidateAmount()
+		public bool ValidateAmount()
 		{
 			return Amount > 0;
 		}
-		private bool ValidateSecurityCode()
+		public bool ValidateSecurityCode()
 		{
             if (SecurityCode != null)
             {
