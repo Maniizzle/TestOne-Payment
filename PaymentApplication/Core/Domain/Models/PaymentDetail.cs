@@ -69,7 +69,7 @@ namespace PaymentApplication.Core.Domain.Models
 		}
 		public bool ValidateSecurityCode()
 		{
-            if (SecurityCode != null)
+            if (SecurityCode != null )
             {
 				var securityCode = SecurityCode.Trim();
 				var status = int.TryParse(securityCode, out int result);
@@ -80,7 +80,7 @@ namespace PaymentApplication.Core.Domain.Models
                 }
 				return false;
             }
-			return false;
+			return true;
 		}
 		public bool ValidatePaymentDetail()
         {
