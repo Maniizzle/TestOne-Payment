@@ -88,7 +88,7 @@ namespace PaymentApplication.Core.Application.Services
             detailRepository.Save();
 
             var gatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail,transactionType);
-            var result = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumber).FirstOrDefault();
+            var result = paymentLogRepository.GetPaymentLogByFilter(c => c.PaymentReference == referenceNumber);//.FirstOrDefault();
             if (gatewayResult.Code == ResponseCodes.OK)
             {
                 result.PaymentState = PaymentState.Processed;
@@ -116,7 +116,7 @@ namespace PaymentApplication.Core.Application.Services
                 return false;
 
             var expGatewayResult = expensivePaymentGateway.ProcessPayment(paymentDetail,transactionType);
-            var paymentLog = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberr).FirstOrDefault();
+            var paymentLog = paymentLogRepository.GetPaymentLogByFilter(c => c.PaymentReference == referenceNumberr);//.FirstOrDefault();
 
             if (expGatewayResult.Code == ResponseCodes.OK)
             {
@@ -135,7 +135,7 @@ namespace PaymentApplication.Core.Application.Services
                 //retry with cheapGateWay
                 var logg = paymentLogRepository.Add(new PaymentLog { PaymentDetailId = paymentLog.PaymentDetailId, PaymentReference = paymentLog.PaymentReference, Amount = paymentDetail.Amount, PaymentGateway = PaymentGateway.CheapGateway, PaymentState = PaymentState.Pending });
                 var cheapGatewayResult = cheapPaymentGateway.ProcessPayment(paymentDetail);
-                var paymentLogCheap = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberr && c.PaymentGateway == PaymentGateway.CheapGateway).FirstOrDefault();
+                var paymentLogCheap = paymentLogRepository.GetPaymentLogByFilter(c => c.PaymentReference == referenceNumberr && c.PaymentGateway == PaymentGateway.CheapGateway);//.FirstOrDefault();
                 if (cheapGatewayResult.Code == ResponseCodes.OK)
                 {
                     paymentLog.PaymentState = PaymentState.Processed;
@@ -165,7 +165,7 @@ namespace PaymentApplication.Core.Application.Services
             detailRepository.Save();
 
             var premiumPaymentResult = premiumPaymentGateway.ProcessPayment(paymentDetail,transactionType);
-            var paymentLogg = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberrr).FirstOrDefault();
+            var paymentLogg = paymentLogRepository.GetPaymentLogByFilter(c => c.PaymentReference == referenceNumberrr);//.FirstOrDefault();
             if (premiumPaymentResult.Code == ResponseCodes.OK)
             {
                 paymentLogg.PaymentState = PaymentState.Processed;
@@ -188,7 +188,7 @@ namespace PaymentApplication.Core.Application.Services
                     if (!(paymentLogRepository.Save() > 0))
                         return false;
                     var premiumPaymentResultt = premiumPaymentGateway.ProcessPayment(paymentDetail,transactionType);
-                    var paymentLogPremium = paymentLogRepository.Filter(c => c.PaymentReference == referenceNumberrr && c.PaymentGateway == PaymentGateway.PremiumGateway && c.PaymentState == PaymentState.Pending).FirstOrDefault();
+                    var paymentLogPremium = paymentLogRepository.GetPaymentLogByFilter(c => c.PaymentReference == referenceNumberrr && c.PaymentGateway == PaymentGateway.PremiumGateway && c.PaymentState == PaymentState.Pending);//.FirstOrDefault();
 
                     if (premiumPaymentResultt.Code == ResponseCodes.OK)
                     {

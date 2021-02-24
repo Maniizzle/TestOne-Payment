@@ -5,6 +5,7 @@ using PaymentApplication.Persistence.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace PaymentApplication.Persistence.Repository
@@ -19,6 +20,10 @@ namespace PaymentApplication.Persistence.Repository
         public PaymentLog GetPaymentDetail(int id)
         {
            return Entities.Where(c => c.Id == id).Include(c => c.PaymentDetail).FirstOrDefault();
+        }
+        public PaymentLog GetPaymentLogByFilter(Expression<Func<PaymentLog, bool>> predicate)
+        {
+            return Entities.Where(predicate).Include(c => c.PaymentDetail).FirstOrDefault();
         }
     }
 }
