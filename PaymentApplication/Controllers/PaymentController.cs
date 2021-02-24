@@ -22,6 +22,11 @@ namespace PaymentApplication.Controllers
             this.mapper = mapper;
             this.payment = payment;
         }
+        /// <summary>
+        /// Processes payment using several gateways
+        /// </summary>
+        /// <param name="paymentDetail"></param>
+        /// <returns>status code and Message </returns>
         [HttpPost("processpayment")]
         public IActionResult ProcessPayment(PaymentRequestDto paymentDetail )
         {
